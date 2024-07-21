@@ -3,63 +3,99 @@
 namespace App\Http\Controllers\Api\Post;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PostResource;
+use App\Models\Post;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of posts.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        
+        $posts = Post::all();
+        return response()->json(PostResource::collection($posts));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Create a new post
      */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $post = Post::create([
+            'title' => $request->input('title'),
+            'body' => $request->input('body'),
+            'user_id' => $request->user()->id,
+            'category_id' => 1,
+        ]);
+        return response()->json(new PostResource($post), 201);
+    }
+
+    
+    /**
+     * Display the specified post.
+     */
+    public function show($id): JsonResponse
+    {
+        $post = Post::find($id);
+
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        return response()->json(new PostResource($post));
+    }
+
+    
+    /**
+     * Update the specified post.
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'body' => 'sometimes|required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $post = Post::find($id);
+
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        $post->update($request->all());
+        return response()->json(new PostResource($post));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified post from database.
      */
-    public function store(Request $request)
+    public function destroy($id): JsonResponse
     {
-        //
-    }
+        $post = Post::find($id);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $post->delete();
+        return response()->json(['message' => 'Post deleted successfully']);
     }
 }

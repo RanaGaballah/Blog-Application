@@ -3,63 +3,77 @@
 namespace App\Http\Controllers\Api\Category;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CategoryResource;
+use App\Models\Category;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Get all categories
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $categories = Category::all();
+        return response()->json(CategoryResource::collection($categories), 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a new category
      */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $category = Category::create($request->only(['name', 'description']));
+        return response()->json(new CategoryResource($category), 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Get a single category
      */
-    public function store(Request $request)
+    public function show($id): JsonResponse
     {
-        //
+        $category = Category::findOrFail($id);
+        return response()->json(new CategoryResource($category), 200);
     }
 
     /**
-     * Display the specified resource.
+     * Update a category
      */
-    public function show(string $id)
+    public function update(Request $request, $id): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $category = Category::findOrFail($id);
+        $category->update($request->only(['name', 'description']));
+        return response()->json(new CategoryResource($category), 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *  Delete a category
      */
-    public function edit(string $id)
-    {
-        //
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id): JsonResponse
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $category = Category::findOrFail($id);
+        $category->delete();
+        return response()->json(['message' => 'Category deleted successfully']);
     }
 }
