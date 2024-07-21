@@ -8,6 +8,7 @@ use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
@@ -17,7 +18,7 @@ class PostController extends Controller
     public function index(): JsonResponse
     {
         
-        $posts = Post::all();
+        $posts = Post::with(['user', 'category'])->get();
         return response()->json(PostResource::collection($posts));
     }
 
@@ -29,18 +30,32 @@ class PostController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'body' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+
         $post = Post::create([
             'title' => $request->input('title'),
             'body' => $request->input('body'),
             'user_id' => $request->user()->id,
-            'category_id' => 1,
+            'category_id' => $request->input('category_id'),
         ]);
+
+        $post->load(['category']);
+        Log::channel('post_actions')->info('Post created', [
+            'username' =>$request->user()->name,
+            'title' => $post->title,
+            'body' => $post->body,
+            'post_id' => $post->id,
+            'user_id' => $request->user()->id,
+            'category_id' => $post->category_id,
+            'created_at' => $post->created_at,
+        ]);
+
         return response()->json(new PostResource($post), 201);
     }
 
@@ -50,12 +65,7 @@ class PostController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $post = Post::find($id);
-
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
-        }
-
+        $post = Post::with(['user', 'category'])->findOrFail($id);
         return response()->json(new PostResource($post));
     }
 
@@ -66,22 +76,30 @@ class PostController extends Controller
     public function update(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'body' => 'sometimes|required|string',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $post = Post::find($id);
+        $post = Post::findOrFail($id);
+        $post->update($request->only(['title', 'body', 'category_id']));
 
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
-        }
+        $post->load(['category']);
+        Log::channel('post_actions')->info('Post updated', [
+            'username' =>$request->user()->name,
+            'title' => $post->title,
+            'body' => $post->body,
+            'post_id' => $post->id,
+            'user_id' => $request->user()->id,
+            'category_id' => $post->category_id,
+            'updated_at' => $post->updated_at,
+        ]);
 
-        $post->update($request->all());
-        return response()->json(new PostResource($post));
+        return response()->json(new PostResource($post), 200);
     }
 
     /**
@@ -96,6 +114,14 @@ class PostController extends Controller
         }
 
         $post->delete();
+        Log::channel('post_actions')->info('Post deleted', [
+            'title' => $post->title,
+            'body' => $post->body,
+            'post_id' => $post->id,
+            'user_id' => $post->user_id,
+            'category_id' => $post->category_id,
+            'deleted_at' => now(),
+        ]);
         return response()->json(['message' => 'Post deleted successfully']);
     }
 }
