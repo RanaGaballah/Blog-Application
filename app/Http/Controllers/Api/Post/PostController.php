@@ -6,11 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use App\Services\LoggingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
+    /**
+     * Log entries
+     * for auditing purposes.
+     */
+    protected $loggingService;
+
+    public function __construct(LoggingService $loggingService)
+    {
+        $this->loggingService = $loggingService;
+    }
+
     /**
      * Display a listing of posts.
      */
@@ -33,20 +44,12 @@ class PostController extends Controller
         ]);
 
         $post->load(['category']);
-        Log::channel('post_actions')->info('Post created', [
-            'username' =>$request->user()->name,
-            'title' => $post->title,
-            'body' => $post->body,
-            'post_id' => $post->id,
-            'user_id' => $request->user()->id,
-            'category_id' => $post->category_id,
-            'created_at' => $post->created_at,
-        ]);
+        $this->loggingService->log($request, $post, 'Post Created');
 
         return response()->json(new PostResource($post), 201);
     }
 
-    
+
     /**
      * Display the specified post.
      */
@@ -56,7 +59,7 @@ class PostController extends Controller
         return response()->json(new PostResource($post));
     }
 
-    
+
     /**
      * Update the specified post.
      */
@@ -66,15 +69,7 @@ class PostController extends Controller
         $post->update($request->only(['title', 'body', 'category_id']));
 
         $post->load(['category']);
-        Log::channel('post_actions')->info('Post updated', [
-            'username' =>$request->user()->name,
-            'title' => $post->title,
-            'body' => $post->body,
-            'post_id' => $post->id,
-            'user_id' => $request->user()->id,
-            'category_id' => $post->category_id,
-            'updated_at' => $post->updated_at,
-        ]);
+        $this->loggingService->log($request, $post, 'Post Updated');
 
         return response()->json(new PostResource($post), 200);
     }
@@ -86,15 +81,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $post->delete();
-
-        Log::channel('post_actions')->info('Post deleted', [
-            'title' => $post->title,
-            'body' => $post->body,
-            'post_id' => $post->id,
-            'user_id' => $post->user_id,
-            'category_id' => $post->category_id,
-            'deleted_at' => now(),
-        ]);
+        $this->loggingService->log(null, $post, 'Post Deleted');
         return response()->json(['message' => 'Post deleted successfully']);
     }
 }
