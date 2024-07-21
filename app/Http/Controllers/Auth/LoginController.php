@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Http\Resources\{ErrorResource,UserResource};
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+
 
 class LoginController extends Controller
 {
@@ -17,36 +20,25 @@ class LoginController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        $user = User::findOrFail($request->email);
+        
+        if ((Hash::check($request->password, $user->password)) || ($user->password == null)) {
+            $user->tokens()->delete();
+            $token = $user->createToken(request()->userAgent())->plainTextToken;
+            return response()->json([
+                'token' => $token,
+                'user' => new UserResource($user),
+            ], 200);
+        } else {
+            return response()->json(new ErrorResource(401, 'Incorrect Password',), 401);
         }
-
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
-        }
-        $user = Auth::user();
-        $user->tokens()->delete();
-        $token = $user->createToken('Personal Access Token')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'user' => new UserResource($user),
-        ], 200);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-
+        $request->user()->tokens()->delete();
         return response()->json(['message' => 'Logged out successfully']);
     }
 }

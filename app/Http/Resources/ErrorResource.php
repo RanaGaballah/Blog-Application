@@ -7,6 +7,16 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ErrorResource extends JsonResource
 {
+
+
+    public function __construct($status, $message, $details = null)
+    {
+        parent::__construct([
+            'status' => $status,
+            'message' => $message,
+            'details' => $details,
+        ]);
+    }
     /**
      * Transform the resource into an array.
      *
@@ -14,10 +24,6 @@ class ErrorResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
-            'status' => $this->resource['status'],
-            'message' => $this->resource['message'],
-            'errors' => $this->resource['errors'],
-        ];
+        return $this->resource;
     }
 }

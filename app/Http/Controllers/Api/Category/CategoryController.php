@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api\Category;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
@@ -23,17 +22,8 @@ class CategoryController extends Controller
     /**
      * Store a new category
      */
-    public function store(Request $request): JsonResponse
+    public function store(CategoryRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $category = Category::create($request->only(['name', 'description']));
         return response()->json(new CategoryResource($category), 201);
     }
@@ -50,17 +40,8 @@ class CategoryController extends Controller
     /**
      * Update a category
      */
-    public function update(Request $request, $id): JsonResponse
+    public function update(CategoryRequest $request, $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $category = Category::findOrFail($id);
         $category->update($request->only(['name', 'description']));
         return response()->json(new CategoryResource($category), 200);

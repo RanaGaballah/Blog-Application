@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api\Post;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Post\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
@@ -17,7 +16,6 @@ class PostController extends Controller
      */
     public function index(): JsonResponse
     {
-        
         $posts = Post::with(['user', 'category'])->get();
         return response()->json(PostResource::collection($posts));
     }
@@ -25,19 +23,8 @@ class PostController extends Controller
     /**
      * Create a new post
      */
-    public function store(Request $request): JsonResponse
+    public function store(PostRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'body' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-
         $post = Post::create([
             'title' => $request->input('title'),
             'body' => $request->input('body'),
@@ -73,18 +60,8 @@ class PostController extends Controller
     /**
      * Update the specified post.
      */
-    public function update(Request $request, $id): JsonResponse
+    public function update(PostRequest $request, $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'body' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         $post = Post::findOrFail($id);
         $post->update($request->only(['title', 'body', 'category_id']));
 
@@ -107,13 +84,9 @@ class PostController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $post = Post::find($id);
-
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
-        }
-
+        $post = Post::findOrFail($id);
         $post->delete();
+
         Log::channel('post_actions')->info('Post deleted', [
             'title' => $post->title,
             'body' => $post->body,
