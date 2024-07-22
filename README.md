@@ -60,17 +60,17 @@ This project is built using the Laravel framework, providing a robust and scalab
    
     ```
 
-4. **Copy `.env.example` to `.env`:**
+3. **Copy `.env.example` to `.env`:**
     ```sh
     cp .env.example .env
     ```
 
+4. **Generate application key:**
+    ```sh
+    php artisan key:generate
+    ```
 
-5. **Configure your `.env` file:**
-
-    Update the `.env` file with your database and other service credentials.
-
-6. **Run database migrations:**
+5. **Run database migrations:**
     ```sh
     php artisan migrate
     ```
