@@ -23,10 +23,13 @@ class LoginController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::where('email', $request->email)->first();
+
+        //check if user exists 
         if (!$user) {
             return response()->json(new ErrorResource(404, 'User not found'), 404);
         }
         
+        //check user password
         if ((Hash::check($request->password, $user->password)) || ($user->password == null)) {
             $user->tokens()->delete();
             $token = $user->createToken(request()->userAgent())->plainTextToken;

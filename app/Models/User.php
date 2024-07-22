@@ -46,6 +46,9 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * user could make many posts  
+     */
 
     public function posts()
     {

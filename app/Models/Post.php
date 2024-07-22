@@ -17,11 +17,18 @@ class Post extends Model
     ];
 
 
+    /**
+     *  post belongs to one user
+    */
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     *  post belongs to one category
+    */
     public function category()
     {
         return $this->belongsTo(Category::class);

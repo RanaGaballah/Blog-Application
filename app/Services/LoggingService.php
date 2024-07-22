@@ -10,6 +10,11 @@ class LoggingService
 {
 
 
+    /**
+     * Log entries
+     * should include relevant details for auditing purposes.
+     */
+
     public function Log(?Request $request = null, Post $post, $logName)
     {
         try {
@@ -36,6 +41,12 @@ class LoggingService
                 ]),
             };
 
+            /**
+             * this channel generate log files each day
+             * save info
+             * deleteing them after 14 day 
+             */
+            
             Log::channel('post_actions')->info($logName, $logData);
             
         } catch (\Exception $e) {
