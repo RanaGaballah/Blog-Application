@@ -12,7 +12,7 @@ use Tests\TestCase;
 class RegisterTest extends TestCase
 {
 
-    public function it_registers_a_user_successfully()
+    public function test_registers_a_user_successfully()
     {
         $request = RegisterRequest::create('/api/register', 'POST', [
             'name' => 'Test1',
@@ -36,7 +36,7 @@ class RegisterTest extends TestCase
     }
 
     
-    public function it_requires_name_email_and_password()
+    public function test_requires_name_email_and_password()
     {
         $request = RegisterRequest::create('/api/register', 'POST', []);
 
@@ -48,7 +48,7 @@ class RegisterTest extends TestCase
         $this->assertArrayHasKey('password', $validator->errors()->toArray());
     }
 
-    public function it_requires_password_confirmation()
+    public function test_requires_password_confirmation()
     {
         $request = RegisterRequest::create('/api/register', 'POST', [
             'name' => 'Test1',
@@ -63,7 +63,7 @@ class RegisterTest extends TestCase
     }
 
    
-    public function it_requires_unique_email()
+    public function test_requires_unique_email()
     {
 
         $request = RegisterRequest::create('/api/register', 'POST', [
@@ -78,7 +78,7 @@ class RegisterTest extends TestCase
         $this->assertArrayHasKey('email', $validator->errors()->toArray());
     }
 
-    public function it_hashes_the_password_correctly()
+    public function test_hashes_the_password_correctly()
     {
         $email = 'test2@example.com';
         $request = RegisterRequest::create('/api/register', 'POST', [
@@ -95,7 +95,7 @@ class RegisterTest extends TestCase
         $this->assertTrue(Hash::check('password', $user->password));
     }
 
-    public function it_does_not_allow_duplicate_tokens()
+    public function test_does_not_allow_duplicate_tokens()
     {
         $request = RegisterRequest::create('/api/register', 'POST', [
             'name' => 'Test3',
