@@ -105,7 +105,7 @@ class LoginTest extends TestCase
     public function test_login_missing_password()
     {
         $response = $this->postJson('/api/login', [
-            'email' => 'test@example.com',
+            'email' => 'logintest@example.com',
         ]);
 
         $response->assertStatus(422)
