@@ -22,7 +22,10 @@ class LoginController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::findOrFail($request->email);
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(new ErrorResource(404, 'User not found'), 404);
+        }
         
         if ((Hash::check($request->password, $user->password)) || ($user->password == null)) {
             $user->tokens()->delete();
@@ -36,9 +39,4 @@ class LoginController extends Controller
         }
     }
 
-    public function logout(Request $request)
-    {
-        $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
-    }
 }
